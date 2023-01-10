@@ -1,5 +1,6 @@
 <template>
   <div class="h-screen relative">
+    <GeoErrorModal @closeGeoError="closeGeoError" v-if="geoError" :geoErrorMsg="geoErrorMsg" />
     <div id="map" class="h-full z-[1]"></div>
   </div>
 </template>
@@ -7,10 +8,13 @@
 <script>
 import leaflet from 'leaflet';
 import { onMounted, ref } from 'vue';
+import GeoErrorModal from '@/components/GeoErrorModal.vue'
 
 export default {
   name: 'HomeView',
-  components: {},
+  components: {
+    GeoErrorModal
+  },
   setup() {
     let map;
     onMounted(() => {
@@ -39,6 +43,8 @@ export default {
     const coords = ref(null);
     const fetchCoords = ref(null);
     const geoMarker = ref(null);
+    const geoError = ref(true);
+    const geoErrorMsg = ref(null);
 
     const getGeolocation = () => {
       // check session storage for coords
@@ -68,7 +74,9 @@ export default {
       plotGeolocation(coords.value);
     };
     const getLocError = (err) => {
-      console.log(err);
+      fetchCoords.value = null;
+      geoError.value = true;
+      geoErrorMsg.value = err.message;
     };
 
     const plotGeolocation = (coords) => {
@@ -87,7 +95,12 @@ export default {
       map.setView([coords.lat, coords.lng], 10);
     };
 
-    return { coords, geoMarker };
+    const closeGeoError = () => {
+      geoError.value = null;
+      geoErrorMsg.value = null;
+    }
+
+    return { coords, geoMarker, closeGeoError, geoError, geoErrorMsg };
   }
 }
 </script>
