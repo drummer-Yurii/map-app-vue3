@@ -1,7 +1,14 @@
 <template>
   <div class="h-screen relative">
     <GeoErrorModal @closeGeoError="closeGeoError" v-if="geoError" :geoErrorMsg="geoErrorMsg" />
-    <MapFeatures getGeolocation="getGeolocation" :coords="coords" :fetchCoords="fetchCoords" />
+    <MapFeatures 
+      @getGeolocation="getGeolocation" 
+      @plotResult="plotResult"
+      @toggleSearchResults="toggleSearchResults"
+      :coords="coords" 
+      :fetchCoords="fetchCoords" 
+      :searchResults="searchResults"
+    />
     <div id="map" class="h-full z-[1]"></div>
   </div>
 </template>
@@ -40,6 +47,9 @@ export default {
       )
       .addTo(map);
 
+      map.on('moveend', () => {
+        closeSearchResults();
+      })
       getGeolocation();
     });
   
@@ -107,8 +117,49 @@ export default {
       geoError.value = null;
       geoErrorMsg.value = null;
     };
+    const resultMarker = ref(null);
+    const plotResult = (coords) => {
+      // Check to see if resultMarcker has value
+      if (resultMarker.value) {
+        map.removeLayer(resultMarker.value);
+      }
+       // create custom marker
+       const customMarker = leaflet.icon({
+        iconUrl: require('../assets/map-marker-blue.svg'),
+        iconSize: [35, 35],
+      });
 
-    return { coords, fetchCoords, geoMarker, closeGeoError, geoError, geoErrorMsg, getGeolocation };
+      // create new marker with coords and custom icon
+      resultMarker.value = leaflet
+      .marker([coords.coordinates[1], coords.coordinates[0]], {icon: customMarker})
+      .addTo(map);
+
+      // set map view to current location
+      map.setView([coords.coordinates[1], coords.coordinates[0]], 14);
+
+      closeSearchResults();
+    };
+    const searchResults = ref(null);
+    const toggleSearchResults = () => {
+      searchResults.value = !searchResults.value;
+    };
+    const closeSearchResults = () => {
+      searchResults.value = null;
+    }; 
+
+    return { 
+      coords, 
+      fetchCoords, 
+      geoMarker, 
+      closeGeoError, 
+      geoError, 
+      geoErrorMsg, 
+      getGeolocation, 
+      plotResult, 
+      searchResults, 
+      toggleSearchResults,
+      closeSearchResults, 
+    };
   }
 }
 </script>
